@@ -1,124 +1,152 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# XML Data Service
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+An API that imports vehicle makes and vehicle types from the [NHTSA vPIC API](https://vpic.nhtsa.dot.gov/api/) and serves normalized data through GraphQL.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Features
 
-## Description
+- Fetches NHTSA XML responses and validates/parses them before processing.
+- Normalizes vehicle make and vehicle type identifiers and names.
+- Stores results in MongoDB with bulk, idempotent upserts keyed by make ID.
+- Exposes GraphQL queries for listing makes and looking up a make by ID.
+- Logs ingestion progress and retries transient NHTSA request failures.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Requirements
 
-## Project setup
+- Node.js 22 or later and npm
+- MongoDB 8, either locally or through Docker Compose
 
-```bash
-$ npm install
-```
+## Tech stack
 
-## Compile and run the project
+- Node.js + TypeScript
+- NestJS for application structure and dependency injection
+- GraphQL for querying normalized data
+- MongoDB for persistence
+- Mongoose for MongoDB models and operations
+- fast-xml-parser for XML parsing
+- p-map for bounded concurrency and incremental result processing
+- nestjs-pino / Pino for structured logging
+- Docker for containerization
+
+## Configuration
+
+Copy the sample environment file and set the NHTSA base URL:
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+cp .env.example .env
 ```
 
-## Run tests
+Ensure `.env` contains at least:
+
+```dotenv
+PORT=3000
+MONGODB_URI=mongodb://localhost:27017/xml-data-service
+BASE_URL=https://vpic.nhtsa.dot.gov/api/vehicles
+```
+
+| Variable            | Required | Default | Description                                    |
+| ------------------- | -------- | ------- | ---------------------------------------------- |
+| `MONGODB_URI`       | Yes      | None    | MongoDB connection string.                     |
+| `BASE_URL`          | Yes      | None    | Base URL for the NHTSA vPIC vehicle API.       |
+| `PORT`              | No       | `3000`  | HTTP port used by the service.                 |
+| `NODE_ENV`          | No       | None    | GraphiQL is disabled when set to `production`. |
+| `LOG_LEVEL`         | No       | `info`  | Pino HTTP log level.                           |
+| `NHTSA_TIMEOUT_MS`  | No       | `10000` | Timeout for each NHTSA request.                |
+| `NHTSA_MAX_RETRIES` | No       | `3`     | Retries after retryable NHTSA failures.        |
+
+Retries use exponential backoff with jitter. `NHTSA_MAX_RETRIES` is the number of retries after the initial request.
+
+## Run Locally
+
+Install dependencies, start MongoDB, and launch the API:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm install
+npm run start:dev
 ```
 
-## Deployment
+The API listens on `http://localhost:3000` by default. The GraphQL endpoint is `http://localhost:3000/graphql`; GraphiQL is available outside production. The root route (`GET /`) returns a simple `Hello World!` response.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## Run With Docker Compose
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Docker Compose starts the API and MongoDB. The Compose configuration supplies the MongoDB URI for the API container; `.env` is also loaded for settings such as `BASE_URL`.
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+cp .env.example .env
+# Add BASE_URL=https://vpic.nhtsa.dot.gov/api/vehicles to .env
+docker compose up --build
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+The API is exposed on port `3000`, and MongoDB data is persisted in the `mongo_data` volume. Set `PORT` in `.env` only if you also update the host port mapping in `docker-compose.yml`.
 
-## Observability
+## Import NHTSA Data
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
-
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
-
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
-
-To add it to this project:
+With MongoDB running and `.env` configured, run the one-off ingestion command:
 
 ```bash
-$ npm install @nestjs/observe
+npm run ingest
 ```
 
-Then follow the [setup guide](https://docs.nestjs.com/observability/overview) - it takes a single import and an app key.
+The command builds the application, downloads the full makes list, then requests vehicle types for each make. Requests are processed with a concurrency of five and successful records are persisted in batches of 100. A make ID is used as the upsert key, so rerunning ingestion updates existing records rather than creating duplicates. Individual make failures are logged; ingestion continues processing other makes and exits with an error if any make failed.
 
-The free plan needs no payment details and covers 300,000 events a month. You can also browse the [live demo](https://www.observe-demo.nestjs.com/dashboard) first - the whole dashboard over a busy service's data, with nothing to install.
+## GraphQL API
 
-## Resources
+Use `POST /graphql`. The `vehicleMakes` query is sorted by make ID and supports offset pagination. Its default offset is `0` and default limit is `100`; the maximum limit is `500`.
 
-Check out a few resources that may come in handy when working with NestJS:
+```graphql
+query {
+  vehicleMakes(offset: 0, limit: 20) {
+    makeId
+    makeName
+    vehicleTypes {
+      typeId
+      typeName
+    }
+  }
+}
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observe](https://observe.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Look up one make by its NHTSA make ID. The result is `null` when no matching record exists:
 
-## Support
+```graphql
+query {
+  vehicleMake(makeId: 440) {
+    makeId
+    makeName
+    vehicleTypes {
+      typeId
+      typeName
+    }
+  }
+}
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+The schema is generated at `src/schema.gql` when the application initializes.
 
-## Stay in touch
+## Technical Decisions
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- **GraphQL for reads:** The service exposes focused queries instead of returning the full dataset from a REST endpoint.
+- **MongoDB with Mongoose:** Vehicle makes and their vehicle types are stored as documents; make IDs provide a stable key for idempotent synchronization.
+- **XML boundary validation:** NHTSA responses are syntax-validated and normalized into typed application data before persistence.
+- **Bounded ingestion:** NHTSA calls use bounded concurrency, while Mongo writes are grouped into batches to limit resource use.
+- **Resilience and visibility:** Retryable source failures use exponential backoff; Pino logs per-make errors and ingestion progress.
 
-## License
+## Tests and Quality Checks
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```bash
+npm test
+npm run test:e2e
+npm run test:cov
+npm run lint
+```
+
+## Project Structure
+
+```text
+src/
+  modules/
+    documents/   GraphQL resolver, persistence service, and Mongo schema
+    ingestion/   NHTSA-to-MongoDB synchronization workflow
+    sources/     NHTSA client, XML parser, and data normalizer
+  scripts/       One-off ingestion entry point
+test/            End-to-end tests
+```
