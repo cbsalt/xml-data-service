@@ -148,5 +148,4 @@ src/
     ingestion/   NHTSA-to-MongoDB synchronization workflow
     sources/     NHTSA client, XML parser, and data normalizer
   scripts/       One-off ingestion entry point
-test/            End-to-end tests
 ```
