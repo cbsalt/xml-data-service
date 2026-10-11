@@ -130,13 +130,11 @@ The schema is generated at `src/schema.gql` when the application initializes.
 - **Bounded ingestion:** NHTSA calls use bounded concurrency, while Mongo writes are grouped into batches to limit resource use.
 - **Resilience and visibility:** Retryable source failures use exponential backoff; Pino logs per-make errors and ingestion progress.
 
-## Tests and Quality Checks
+## Tests
 
 ```bash
 npm test
-npm run test:e2e
-npm run test:cov
-npm run lint
+
 ```
 
 ## Project Structure
