@@ -43,6 +43,8 @@ MONGODB_URI=mongodb://localhost:27017/xml-data-service
 BASE_URL=https://vpic.nhtsa.dot.gov/api/vehicles
 ```
 
+`MONGODB_URI` above is for running the API on your machine. When using Docker Compose, the Compose file overrides it with `mongodb://mongo:27017/xml-data-service`.
+
 | Variable            | Required | Default | Description                                    |
 | ------------------- | -------- | ------- | ---------------------------------------------- |
 | `MONGODB_URI`       | Yes      | None    | MongoDB connection string.                     |
@@ -57,7 +59,13 @@ Retries use exponential backoff with jitter. `NHTSA_MAX_RETRIES` is the number o
 
 ## Run Locally
 
-Install dependencies, start MongoDB, and launch the API:
+1. Start MongoDB only:
+
+```bash
+docker compose up -d mongo
+```
+
+2. Install dependencies and start the API:
 
 ```bash
 npm install
@@ -68,11 +76,10 @@ The API listens on `http://localhost:3000` by default. The GraphQL endpoint is `
 
 ## Run With Docker Compose
 
-Docker Compose starts the API and MongoDB. The Compose configuration supplies the MongoDB URI for the API container; `.env` is also loaded for settings such as `BASE_URL`.
+Docker Compose builds and starts the API and MongoDB.
 
 ```bash
 cp .env.example .env
-# Add BASE_URL=https://vpic.nhtsa.dot.gov/api/vehicles to .env
 docker compose up --build
 ```
 
