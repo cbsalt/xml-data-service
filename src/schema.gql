@@ -1,0 +1,19 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Query {
+  vehicleMake(makeId: Int!): VehicleMakeGraphql
+  vehicleMakes(limit: Int! = 100, offset: Int! = 0): [VehicleMakeGraphql!]!
+}
+
+type VehicleMakeGraphql {
+  makeId: Int!
+  makeName: String!
+  vehicleTypes: [VehicleTypeGraphql!]!
+}
+
+type VehicleTypeGraphql {
+  typeId: Int!
+  typeName: String!
+}
