@@ -11,17 +11,21 @@ import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class NhtsaClient {
-  private readonly baseUrl = process.env.BASE_URL;
+  private readonly baseUrl: string;
 
   constructor(
     private readonly http: HttpService,
     private readonly config: ConfigService,
     @InjectPinoLogger(NhtsaClient.name)
     private readonly logger: PinoLogger,
-  ) {}
+  ) {
+    this.baseUrl = this.config
+      .getOrThrow<string>('BASE_URL')
+      .replace(/\/+$/, '');
+  }
 
   getAllMakesXml(): Promise<string> {
-    return this.getXml(`${this.config.get('BASE_URL')}/getallmakes?format=XML`);
+    return this.getXml(`${this.baseUrl}/getallmakes?format=XML`);
   }
 
   getVehicleTypesXml(makeId: number): Promise<string> {
