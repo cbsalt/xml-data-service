@@ -68,6 +68,8 @@ export class IngestionService {
       );
     };
 
+    let consecutiveFailures = 0;
+
     for await (const result of pMapIterable(
       makes,
       async (make) => {
@@ -100,7 +102,6 @@ export class IngestionService {
       { concurrency, backpressure: 10 },
     )) {
       const maxConsecutiveFailures = 20;
-      let consecutiveFailures = 0;
       processed++;
 
       if (result.ok) {
