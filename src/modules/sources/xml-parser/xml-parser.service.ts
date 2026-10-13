@@ -11,13 +11,25 @@ export class XmlParserService {
   });
 
   parse(xml: string): Record<string, unknown> {
-    const validation = SyntaxValidator.validate(xml);
+    let validation: ReturnType<typeof SyntaxValidator.validate>;
+
+    try {
+      validation = SyntaxValidator.validate(xml);
+    } catch {
+      throw new BadGatewayException('The NHTSA API returned invalid XML');
+    }
 
     if (validation !== true) {
       throw new BadGatewayException('The NHTSA API returned invalid XML');
     }
 
-    const result: unknown = this.parser.parse(xml);
+    let result: unknown;
+
+    try {
+      result = this.parser.parse(xml);
+    } catch {
+      throw new BadGatewayException('The NHTSA API returned invalid XML');
+    }
 
     if (!result || typeof result !== 'object' || Array.isArray(result)) {
       throw new BadGatewayException('Unexpected XML response structure');
