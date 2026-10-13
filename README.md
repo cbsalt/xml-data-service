@@ -127,8 +127,6 @@ query {
 }
 ```
 
-The schema is generated at `src/schema.gql` when the application initializes.
-
 ## Technical Decisions
 
 - **GraphQL for reads:** The service exposes focused queries instead of returning the full dataset from a REST endpoint.
