@@ -22,6 +22,11 @@ import { MongooseModule } from '@nestjs/mongoose';
           .default('development'),
         PORT: Joi.number().integer().min(1).max(65535).default(3000),
         MONGODB_URI: Joi.string().required(),
+        BASE_URL: Joi.string()
+          .uri({
+            scheme: ['http', 'https'],
+          })
+          .required(),
       }),
     }),
     LoggerModule.forRoot({
