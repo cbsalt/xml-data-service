@@ -5,7 +5,6 @@ import { IngestionService } from './ingestion.service.js';
 import { DocumentsService } from '../documents/documents.service.js';
 
 import { NhtsaClient } from '../sources/adapters/nhtsa/nhtsa.client.js';
-import { XMLParser } from 'fast-xml-parser';
 import { NormalizerService } from '../sources/normalizer/normalizer.service.js';
 import { XmlParserService } from '../sources/xml-parser/xml-parser.service.js';
 import { getLoggerToken } from 'nestjs-pino';
