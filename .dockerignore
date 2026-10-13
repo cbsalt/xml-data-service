@@ -1,6 +1,16 @@
+```dockerignore
 node_modules
 dist
 coverage
 .git
+.github
 .env
+.env.*
+!.env.example
+npm-debug.log*
 *.log
+.DS_Store
+.idea
+.vscode
+test-results
+```
